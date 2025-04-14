@@ -4,66 +4,74 @@
   box-sizing: border-box;
 }
 
-body {
+body, html {
+  height: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  background-color: black;
   touch-action: manipulation;
-  overscroll-behavior: none;
-  background: black;
-  font-family: monospace;
 }
 
 #game {
   width: 100%;
   height: 100vh;
-  overflow: hidden;
-  position: relative;
   background-size: cover;
   background-position: center;
+  position: relative;
+}
+
+#scoreboard {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  background: rgba(0,0,0,0.5);
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: #00ffff;
+  font-weight: bold;
+  font-size: 15px;
 }
 
 #player {
   position: absolute;
-  left: 50px;
   bottom: 50px;
-  width: 40px;
-  height: 40px;
-  z-index: 5;
-  filter: drop-shadow(0 0 10px #00ffff);
+  left: 50px;
+  width: 50px;
+  height: 50px;
+  background-color: transparent;
+  background-image: url('Player.svg');
+  background-size: cover;
+  filter: drop-shadow(0 0 10px #ff00ff);
 }
 
 .obstacle {
   position: absolute;
   bottom: 50px;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
+  background-color: transparent;
+  background-image: url('Obstacle.svg'); 
+  background-size: cover;
+  filter: drop-shadow(0 0 10px red);
   animation-name: moveObstacle;
   animation-timing-function: linear;
+  animation-fill-mode: forwards;
 }
 
-.obstacle svg {
-  width: 100%;
-  height: 100%;
+@keyframes moveObstacle {
+  from { right: -60px; }
+  to { right: 110%; }
 }
 
 .powerup {
   position: absolute;
   bottom: 150px;
-  width: 30px;
-  height: 30px;
-  background: gold;
+  width: 40px;
+  height: 40px;
+  background-color: gold;
   border-radius: 50%;
-  animation: moveObstacle 5s linear infinite;
+  animation: moveObstacle 4s linear forwards;
+  filter: drop-shadow(0 0 6px yellow);
 }
 
-#hud {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 18px;
-  color: white;
-  z-index: 10;
-}
-
-@keyframes moveObstacle {
-  0% { right: -60px; }
-  100% { right: 100%; }
-}
