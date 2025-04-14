@@ -95,10 +95,13 @@ function generateObstacle() {
       obstacle.remove();
       clearInterval(obstacleMove);
       score++;
+
+      // Update and save high score
       if (score > highScore) {
         highScore = score;
         localStorage.setItem('highScore', highScore);
       }
+
       updateScore();
 
       if (score % 10 === 0 && level < 3) {
@@ -160,10 +163,13 @@ function activatePowerUp() {
 
 function gameOver() {
   isGameOver = true;
+
+  // Save high score again just in case
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('highScore', highScore);
   }
+
   alert("Game Over! Restarting from Level 1...");
   location.reload();
 }
