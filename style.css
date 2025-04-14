@@ -40,7 +40,7 @@
     width: 50px;
     height: 50px;
     background-color: transparent;
-    background-image: url('player.svg');
+    background-image: url('Player.svg');
     background-size: cover;
     filter: drop-shadow(0 0 10px #ff00ff);
   }
@@ -51,7 +51,7 @@
     width: 50px;
     height: 50px;
     background-color: transparent;
-    background-image: url('obstacle.svg');
+    background-image: url('Obstacle.svg');
     background-size: cover;
     filter: drop-shadow(0 0 10px red);
     animation-name: moveObstacle;
