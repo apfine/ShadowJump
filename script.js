@@ -9,19 +9,14 @@ const backgrounds = [
   'url("bg3.jpg")'
 ];
 
-// Mobile detection
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-// Adjust physics based on device
-let gravity = isMobile ? 2.0 : 2.5;
-let jumpPower = isMobile ? 28 : 20;
-
 let score = 0;
-let highScore = localStorage.getItem('highScore') || 0;
+let highScore = parseInt(localStorage.getItem('highScore')) || 0;
 let level = 1;
 let isJumping = false;
 let isGameOver = false;
 let speed = 4;
+let gravity = 2.5;
+let jumpPower = 20;
 let playerBottom = 50;
 let velocity = 0;
 let isInvincible = false;
@@ -41,7 +36,7 @@ function startGame() {
 }
 
 function updateScore() {
-  scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
+  scoreText.textContent = `Score: ${score} | High Score: ${highScore}`;
   levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
 }
 
@@ -83,29 +78,27 @@ function generateObstacle() {
   game.appendChild(obstacle);
 
   const obstacleMove = setInterval(() => {
-    const obstacleBox = obstacle.getBoundingClientRect();
+    const obstacleLeft = obstacle.getBoundingClientRect().left;
     const playerBox = player.getBoundingClientRect();
-    const gameBox = game.getBoundingClientRect();
-
-    const nearObstacle = obstacleBox.left < playerBox.right + 30 &&
-                         obstacleBox.right > playerBox.left;
-
-    const touchingGround = playerBox.bottom >= gameBox.bottom - 60;
 
     if (
       !isInvincible &&
-      nearObstacle &&
-      touchingGround &&
-      !(isMobile && isJumping && playerBox.bottom < obstacleBox.top)
+      obstacleLeft < playerBox.right &&
+      obstacleLeft + 50 > playerBox.left &&
+      playerBox.bottom > game.getBoundingClientRect().bottom - 60
     ) {
       clearInterval(obstacleMove);
       gameOver();
     }
 
-    if (obstacleBox.left < -60) {
+    if (obstacleLeft < -60) {
       obstacle.remove();
       clearInterval(obstacleMove);
       score++;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
       updateScore();
 
       if (score % 10 === 0 && level < 3) {
@@ -167,8 +160,10 @@ function activatePowerUp() {
 
 function gameOver() {
   isGameOver = true;
-  highScore = Math.max(highScore, score);
-  localStorage.setItem('highScore', highScore);
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('highScore', highScore);
+  }
   alert("Game Over! Restarting from Level 1...");
   location.reload();
 }
