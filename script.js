@@ -10,7 +10,7 @@ const backgrounds = [
 ];
 
 let score = 0;
-let highScore = 0;
+let highScore = parseInt(localStorage.getItem('highScore')) || 0;
 let level = 1;
 let isJumping = false;
 let isGameOver = false;
@@ -36,7 +36,7 @@ function startGame() {
 }
 
 function updateScore() {
-  scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
+  scoreText.textContent = `Score: ${score} | High Score: ${highScore}`;
   levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
 }
 
@@ -52,14 +52,12 @@ function applyGravity() {
     playerBottom += velocity;
     velocity -= gravity;
 
-    // Clamp
     if (playerBottom < groundLevel) {
       playerBottom = groundLevel;
       isJumping = false;
       velocity = 0;
     }
 
-    // Limit max jump height
     if (playerBottom > 300) {
       playerBottom = 300;
       velocity = -gravity;
@@ -97,6 +95,10 @@ function generateObstacle() {
       obstacle.remove();
       clearInterval(obstacleMove);
       score++;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
       updateScore();
 
       if (score % 10 === 0 && level < 3) {
@@ -158,7 +160,10 @@ function activatePowerUp() {
 
 function gameOver() {
   isGameOver = true;
-  highScore = Math.max(highScore, score);
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('highScore', highScore);
+  }
   alert("Game Over! Restarting from Level 1...");
   location.reload();
 }
