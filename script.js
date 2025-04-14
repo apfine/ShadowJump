@@ -10,13 +10,13 @@ const backgrounds = [
 ];
 
 let score = 0;
-let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+let highScore = sessionStorage.getItem('highScore') || 0;
 let level = 1;
 let isJumping = false;
 let isGameOver = false;
 let speed = 4;
-let gravity = 2.5;
-let jumpPower = 20;
+let gravity = 1;
+let jumpPower = 28;
 let playerBottom = 50;
 let velocity = 0;
 let isInvincible = false;
@@ -30,13 +30,14 @@ function startGame() {
 
   document.addEventListener('keydown', jump);
   document.addEventListener('touchstart', () => jump({ code: 'Space' }));
+
   generateObstacle();
   generatePowerUp();
   gameLoop();
 }
 
 function updateScore() {
-  scoreText.textContent = `Score: ${score} | High Score: ${highScore}`;
+  scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
   levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
 }
 
@@ -72,36 +73,47 @@ function generateObstacle() {
 
   const obstacle = document.createElement('div');
   obstacle.classList.add('obstacle');
+
+  // Random SVG obstacle (3 types)
+  const type = Math.floor(Math.random() * 3);
+  const svgs = [
+    `<svg viewBox="0 0 64 64"><rect x="10" y="10" width="44" height="44" fill="#ff0000"/></svg>`,
+    `<svg viewBox="0 0 64 64"><polygon points="32,0 64,64 0,64" fill="#00ff00"/></svg>`,
+    `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#ffff00"/></svg>`
+  ];
+
+  obstacle.innerHTML = svgs[type];
   obstacle.style.right = '-60px';
-  const obstacleSpeed = 4 - level * 0.8;
+  const obstacleSpeed = 4 - level * 0.5;
   obstacle.style.animationDuration = `${obstacleSpeed}s`;
   game.appendChild(obstacle);
 
-  const obstacleMove = setInterval(() => {
-    const obstacleLeft = obstacle.getBoundingClientRect().left;
+  const move = setInterval(() => {
+    const buffer = 10;
+    const obsBox = obstacle.getBoundingClientRect();
     const playerBox = player.getBoundingClientRect();
+    const gameBox = game.getBoundingClientRect();
+
+    const oLeft = obsBox.left + buffer;
+    const oRight = obsBox.right - buffer;
+    const pLeft = playerBox.left + buffer;
+    const pRight = playerBox.right - buffer;
+    const pBottomTouching = playerBox.bottom >= gameBox.bottom - 60;
 
     if (
       !isInvincible &&
-      obstacleLeft < playerBox.right &&
-      obstacleLeft + 50 > playerBox.left &&
-      playerBox.bottom > game.getBoundingClientRect().bottom - 60
+      oLeft < pRight &&
+      oRight > pLeft &&
+      pBottomTouching
     ) {
-      clearInterval(obstacleMove);
+      clearInterval(move);
       gameOver();
     }
 
-    if (obstacleLeft < -60) {
+    if (obsBox.left < -60) {
       obstacle.remove();
-      clearInterval(obstacleMove);
+      clearInterval(move);
       score++;
-
-      // Update and save high score
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-      }
-
       updateScore();
 
       if (score % 10 === 0 && level < 3) {
@@ -111,7 +123,8 @@ function generateObstacle() {
     }
   }, 20);
 
-  setTimeout(generateObstacle, 2000 + Math.random() * 2000);
+  const baseDelay = level === 1 ? 2000 : level === 2 ? 1500 : 1200;
+  setTimeout(generateObstacle, baseDelay + Math.random() * 2000);
 }
 
 function generatePowerUp() {
@@ -163,13 +176,8 @@ function activatePowerUp() {
 
 function gameOver() {
   isGameOver = true;
-
-  // Save high score again just in case
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem('highScore', highScore);
-  }
-
+  highScore = Math.max(highScore, score);
+  sessionStorage.setItem('highScore', highScore);
   alert("Game Over! Restarting from Level 1...");
   location.reload();
 }
