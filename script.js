@@ -1,32 +1,124 @@
-const game = document.getElementById('game');
-const player = document.getElementById('player');
-const scoreText = document.getElementById('score');
-const levelText = document.getElementById('level');
+const player = document.getElementById("player");
+const game = document.getElementById("game");
+const scoreDisplay = document.getElementById("score");
+const highScoreDisplay = document.getElementById("highScore");
+const levelDisplay = document.getElementById("level");
 
-const backgrounds = [
-  'url("bg1.jpg")',
-  'url("bg2.jpg")',
-  'url("bg3.jpg")'
+let isJumping = false;
+let velocity = 0;
+let gravity = 0.8;
+let jumpStrength = -15;
+let score = 0;
+let highScore = 0;
+let level = 1;
+let gameStartedAt = Date.now();
+
+const levels = [
+  { name: "Neon Skies", speed: 5, background: "bg1.jpg" },
+  { name: "Plasma Fields", speed: 6, background: "bg2.jpg" },
+  { name: "Quantum Ruins", speed: 7, background: "bg3.jpg" },
 ];
 
-let score = 0;
-let highScore = sessionStorage.getItem('highScore') || 0;
-let level = 1;
-let isJumping = false;
-let isGameOver = false;
-let speed = 4;
-let gravity = 1;
-let jumpPower = 28;
-let playerBottom = 50;
-let velocity = 0;
-let isInvincible = false;
-const groundLevel = 50;
+function updateScore() {
+  score++;
+  scoreDisplay.textContent = `Score: ${score}`;
+  if (score > highScore) {
+    highScore = score;
+    highScoreDisplay.textContent = `High Score: ${highScore}`;
+  }
+  if (score % 10 === 0) levelUp();
+}
 
-function startGame() {
-  game.style.backgroundImage = backgrounds[level - 1];
+function levelUp() {
+  level = Math.min(level + 1, levels.length);
+  const currentLevel = levels[level - 1];
+  levelDisplay.textContent = `Level ${level}: ${currentLevel.name}`;
+  game.style.backgroundImage = `url('${currentLevel.background}')`;
+}
+
+function jump() {
+  if (!isJumping) {
+    velocity = jumpStrength;
+    isJumping = true;
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    jump();
+  }
+});
+
+document.addEventListener("touchstart", jump);
+
+function createObstacle() {
+  const obstacle = document.createElement("div");
+  obstacle.classList.add("obstacle");
+  game.appendChild(obstacle);
+
+  let obstaclePosition = game.offsetWidth;
+  const speed = levels[level - 1].speed;
+
+  function moveObstacle() {
+    obstaclePosition -= speed;
+    obstacle.style.left = obstaclePosition + "px";
+
+    if (obstaclePosition + obstacle.offsetWidth < 0) {
+      obstacle.remove();
+      updateScore();
+    } else {
+      checkCollision(obstacle);
+      requestAnimationFrame(moveObstacle);
+    }
+  }
+
+  moveObstacle();
+}
+
+function checkCollision(obstacle) {
+  const playerRect = player.getBoundingClientRect();
+  const obstacleRect = obstacle.getBoundingClientRect();
+
+  if (Date.now() - gameStartedAt > 1000) {
+    if (
+      playerRect.left < obstacleRect.right &&
+      playerRect.right > obstacleRect.left &&
+      playerRect.top < obstacleRect.bottom &&
+      playerRect.bottom > obstacleRect.top
+    ) {
+      handleGameOver();
+    }
+  }
+}
+
+function handleGameOver() {
+  alert(`Game Over! Restarting from Level 1...`);
   score = 0;
-  isGameOver = false;
-  updateScore();
+  level = 1;
+  velocity = 0;
+  gameStartedAt = Date.now();
+  scoreDisplay.textContent = `Score: ${score}`;
+  levelDisplay.textContent = `Level ${level}: ${levels[0].name}`;
+  game.style.backgroundImage = `url('${levels[0].background}')`;
+  document.querySelectorAll(".obstacle").forEach((o) => o.remove());
+}
+
+function gameLoop() {
+  const playerTop = parseInt(window.getComputedStyle(player).top);
+  velocity += gravity;
+  player.style.top = Math.min(game.offsetHeight - player.offsetHeight, playerTop + velocity) + "px";
+
+  if (playerTop + velocity >= game.offsetHeight - player.offsetHeight) {
+    isJumping = false;
+    velocity = 0;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+setInterval(createObstacle, 1500);
+gameLoop();
+
 
   document.addEventListener('keydown', jump);
   document.addEventListener('touchstart', () => jump({ code: 'Space' }));
