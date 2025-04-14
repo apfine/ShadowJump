@@ -1,20 +1,14 @@
-//element selector to select elements
-//dont touch here until very importatnt
 const game = document.getElementById('game');
 const player = document.getElementById('player');
 const scoreText = document.getElementById('score');
 const levelText = document.getElementById('level');
 
-
-// Background images for different levels for best experience to you 
 const backgrounds = [
   'url("bg1.jpg")',
   'url("bg2.jpg")',
   'url("bg3.jpg")'
 ];
 
-
-//variavles dont touch here
 let score = 0;
 let highScore = 0;
 let level = 1;
@@ -22,13 +16,12 @@ let isJumping = false;
 let isGameOver = false;
 let speed = 4;
 let gravity = 2.5;
-let jumpPower = 26; // Increased jump height
+let jumpPower = 20;
 let playerBottom = 50;
 let velocity = 0;
 let isInvincible = false;
 const groundLevel = 50;
 
-//game starter pack
 function startGame() {
   game.style.backgroundImage = backgrounds[level - 1];
   score = 0;
@@ -42,15 +35,11 @@ function startGame() {
   gameLoop();
 }
 
-
-//Score updating function
 function updateScore() {
   scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
   levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
 }
 
-
-//You can alter the jump power to increase the jump height
 function jump(e) {
   if (e.code === 'Space' && !isJumping && playerBottom <= groundLevel + 5) {
     isJumping = true;
@@ -58,19 +47,19 @@ function jump(e) {
   }
 }
 
-
-//Player ko girayega kaun bhai ye uske liye :)
 function applyGravity() {
   if (isJumping || playerBottom > groundLevel) {
     playerBottom += velocity;
     velocity -= gravity;
 
+    // Clamp
     if (playerBottom < groundLevel) {
       playerBottom = groundLevel;
       isJumping = false;
       velocity = 0;
     }
 
+    // Limit max jump height
     if (playerBottom > 300) {
       playerBottom = 300;
       velocity = -gravity;
@@ -80,8 +69,6 @@ function applyGravity() {
   }
 }
 
-
-//This is the obstacle generator 
 function generateObstacle() {
   if (isGameOver) return;
 
@@ -122,9 +109,6 @@ function generateObstacle() {
   setTimeout(generateObstacle, 2000 + Math.random() * 2000);
 }
 
-
-//Shaktiyan 
-//Basically superpowers when you play enough
 function generatePowerUp() {
   if (isGameOver) return;
 
@@ -185,6 +169,4 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-//Chaliye shuru karte hain
-//lets start
 startGame();
