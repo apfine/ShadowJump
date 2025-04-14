@@ -1,191 +1,182 @@
+const game = document.getElementById('game');
+const player = document.getElementById('player');
+const scoreText = document.getElementById('score');
+const levelText = document.getElementById('level');
 
-    const game = document.getElementById('game');
-    const player = document.getElementById('player');
-    const scoreText = document.getElementById('score');
-    const levelText = document.getElementById('level');
+const backgrounds = [
+  'url("bg1.jpg")',
+  'url("bg2.jpg")',
+  'url("bg3.jpg")'
+];
 
-    const backgrounds = [
-      'url("bg1.jpg")',
-      'url("bg2.jpg")',
-      'url("bg3.jpg")'
-    ];
+// Mobile detection
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    let score = 0;
-    let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-    let level = 1;
-    let isJumping = false;
-    let isGameOver = false;
-    let speed = 4;
+// Adjust physics based on device
+let gravity = isMobile ? 2.0 : 2.5;
+let jumpPower = isMobile ? 28 : 20;
 
-    // Mobile vs PC physics
-    let gravity, jumpPower;
-    if (/Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      gravity = 2.0;
-      jumpPower = 26;
-    } else {
-      gravity = 2.5;
-      jumpPower = 20;
+let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
+let level = 1;
+let isJumping = false;
+let isGameOver = false;
+let speed = 4;
+let playerBottom = 50;
+let velocity = 0;
+let isInvincible = false;
+const groundLevel = 50;
+
+function startGame() {
+  game.style.backgroundImage = backgrounds[level - 1];
+  score = 0;
+  isGameOver = false;
+  updateScore();
+
+  document.addEventListener('keydown', jump);
+  document.addEventListener('touchstart', () => jump({ code: 'Space' }));
+  generateObstacle();
+  generatePowerUp();
+  gameLoop();
+}
+
+function updateScore() {
+  scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
+  levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
+}
+
+function jump(e) {
+  if (e.code === 'Space' && !isJumping && playerBottom <= groundLevel + 5) {
+    isJumping = true;
+    velocity = jumpPower;
+  }
+}
+
+function applyGravity() {
+  if (isJumping || playerBottom > groundLevel) {
+    playerBottom += velocity;
+    velocity -= gravity;
+
+    if (playerBottom < groundLevel) {
+      playerBottom = groundLevel;
+      isJumping = false;
+      velocity = 0;
     }
 
-    let playerBottom = 50;
-    let velocity = 0;
-    let isInvincible = false;
-    const groundLevel = 50;
+    if (playerBottom > 300) {
+      playerBottom = 300;
+      velocity = -gravity;
+    }
 
-    function startGame() {
-      game.style.backgroundImage = backgrounds[level - 1];
-      score = 0;
-      isGameOver = false;
+    player.style.bottom = `${playerBottom}px`;
+  }
+}
+
+function generateObstacle() {
+  if (isGameOver) return;
+
+  const obstacle = document.createElement('div');
+  obstacle.classList.add('obstacle');
+  obstacle.style.right = '-60px';
+  const obstacleSpeed = 4 - level * 0.8;
+  obstacle.style.animationDuration = `${obstacleSpeed}s`;
+  game.appendChild(obstacle);
+
+  const obstacleMove = setInterval(() => {
+    const obstacleBox = obstacle.getBoundingClientRect();
+    const playerBox = player.getBoundingClientRect();
+    const gameBox = game.getBoundingClientRect();
+
+    const nearObstacle = obstacleBox.left < playerBox.right + 30 &&
+                         obstacleBox.right > playerBox.left;
+
+    const touchingGround = playerBox.bottom >= gameBox.bottom - 60;
+
+    if (
+      !isInvincible &&
+      nearObstacle &&
+      touchingGround &&
+      !(isMobile && isJumping && playerBox.bottom < obstacleBox.top)
+    ) {
+      clearInterval(obstacleMove);
+      gameOver();
+    }
+
+    if (obstacleBox.left < -60) {
+      obstacle.remove();
+      clearInterval(obstacleMove);
+      score++;
       updateScore();
 
-      document.addEventListener('keydown', jump);
-      document.addEventListener('touchstart', () => jump({ code: 'Space' }));
-
-      generateObstacle();
-      generatePowerUp();
-      gameLoop();
-    }
-
-    function updateScore() {
-      scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
-      levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
-    }
-
-    function jump(e) {
-      if (e.code === 'Space' && !isJumping && playerBottom <= groundLevel + 5) {
-        isJumping = true;
-        velocity = jumpPower;
-        score++;
-        updateScore();
+      if (score % 10 === 0 && level < 3) {
+        level++;
+        game.style.backgroundImage = backgrounds[level - 1];
       }
     }
+  }, 20);
 
-    function applyGravity() {
-      if (isJumping || playerBottom > groundLevel) {
-        playerBottom += velocity;
-        velocity -= gravity;
+  setTimeout(generateObstacle, 2000 + Math.random() * 2000);
+}
 
-        if (playerBottom < groundLevel) {
-          playerBottom = groundLevel;
-          isJumping = false;
-          velocity = 0;
-        }
+function generatePowerUp() {
+  if (isGameOver) return;
 
-        if (playerBottom > 300) {
-          playerBottom = 300;
-          velocity = -gravity;
-        }
+  const powerup = document.createElement('div');
+  powerup.classList.add('powerup');
+  powerup.style.right = '-60px';
+  game.appendChild(powerup);
 
-        player.style.bottom = `${playerBottom}px`;
-      }
+  const powerMove = setInterval(() => {
+    const powerBox = powerup.getBoundingClientRect();
+    const playerBox = player.getBoundingClientRect();
+
+    if (
+      powerBox.left < playerBox.right &&
+      powerBox.right > playerBox.left &&
+      powerBox.top < playerBox.bottom &&
+      powerBox.bottom > playerBox.top
+    ) {
+      activatePowerUp();
+      powerup.remove();
+      clearInterval(powerMove);
     }
 
-    function generateObstacle() {
-      if (isGameOver) return;
-
-      const obstacle = document.createElement('div');
-      obstacle.classList.add('obstacle');
-      obstacle.style.right = '-60px';
-      const obstacleSpeed = 4 - level * 0.8;
-      obstacle.style.animationDuration = `${obstacleSpeed}s`;
-      game.appendChild(obstacle);
-
-      const move = setInterval(() => {
-        const buffer = 10;
-        const obsBox = obstacle.getBoundingClientRect();
-        const playerBox = player.getBoundingClientRect();
-        const gameBox = game.getBoundingClientRect();
-
-        const oLeft = obsBox.left + buffer;
-        const oRight = obsBox.right - buffer;
-        const pLeft = playerBox.left + buffer;
-        const pRight = playerBox.right - buffer;
-        const pBottomTouching = playerBox.bottom >= gameBox.bottom - 60;
-
-        if (
-          !isInvincible &&
-          oLeft < pRight &&
-          oRight > pLeft &&
-          pBottomTouching
-        ) {
-          clearInterval(move);
-          gameOver();
-        }
-
-        if (obsBox.left < -60) {
-          obstacle.remove();
-          clearInterval(move);
-
-          if (score % 10 === 0 && level < 3) {
-            level++;
-            game.style.backgroundImage = backgrounds[level - 1];
-            updateScore();
-          }
-        }
-      }, 20);
-
-      setTimeout(generateObstacle, 2000 + Math.random() * 2000);
+    if (powerBox.left < -60) {
+      powerup.remove();
+      clearInterval(powerMove);
     }
+  }, 20);
 
-    function generatePowerUp() {
-      if (isGameOver) return;
+  setTimeout(generatePowerUp, 10000 + Math.random() * 10000);
+}
 
-      const powerup = document.createElement('div');
-      powerup.classList.add('powerup');
-      powerup.style.right = '-60px';
-      game.appendChild(powerup);
+function activatePowerUp() {
+  const type = Math.random() > 0.5 ? 'speed' : 'invincible';
+  if (type === 'speed') {
+    speed /= 2;
+    setTimeout(() => speed *= 2, 5000);
+  } else {
+    isInvincible = true;
+    player.style.filter = 'drop-shadow(0 0 12px cyan)';
+    setTimeout(() => {
+      isInvincible = false;
+      player.style.filter = 'drop-shadow(0 0 10px #ff00ff)';
+    }, 5000);
+  }
+}
 
-      const powerMove = setInterval(() => {
-        const powerBox = powerup.getBoundingClientRect();
-        const playerBox = player.getBoundingClientRect();
+function gameOver() {
+  isGameOver = true;
+  highScore = Math.max(highScore, score);
+  localStorage.setItem('highScore', highScore);
+  alert("Game Over! Restarting from Level 1...");
+  location.reload();
+}
 
-        if (
-          powerBox.left < playerBox.right &&
-          powerBox.right > playerBox.left &&
-          powerBox.top < playerBox.bottom &&
-          powerBox.bottom > playerBox.top
-        ) {
-          activatePowerUp();
-          powerup.remove();
-          clearInterval(powerMove);
-        }
+function gameLoop() {
+  if (isGameOver) return;
+  applyGravity();
+  requestAnimationFrame(gameLoop);
+}
 
-        if (powerBox.left < -60) {
-          powerup.remove();
-          clearInterval(powerMove);
-        }
-      }, 20);
-
-      setTimeout(generatePowerUp, 10000 + Math.random() * 10000);
-    }
-
-    function activatePowerUp() {
-      const type = Math.random() > 0.5 ? 'speed' : 'invincible';
-      if (type === 'speed') {
-        speed /= 2;
-        setTimeout(() => speed *= 2, 5000);
-      } else {
-        isInvincible = true;
-        player.style.filter = 'drop-shadow(0 0 12px cyan)';
-        setTimeout(() => {
-          isInvincible = false;
-          player.style.filter = 'drop-shadow(0 0 10px #ff00ff)';
-        }, 5000);
-      }
-    }
-
-    function gameOver() {
-      isGameOver = true;
-      highScore = Math.max(highScore, score);
-      localStorage.setItem('highScore', highScore);
-      alert("Game Over! Restarting from Level 1...");
-      location.reload();
-    }
-
-    function gameLoop() {
-      if (isGameOver) return;
-      applyGravity();
-      requestAnimationFrame(gameLoop);
-    }
-
-    startGame();
+startGame();
