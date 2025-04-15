@@ -1,14 +1,19 @@
+//DOnt touch the code here from here to variables , you can break the game up . Contact a senior dev
 const game = document.getElementById('game');
 const player = document.getElementById('player');
 const scoreText = document.getElementById('score');
 const levelText = document.getElementById('level');
 
+
+//Vibhhin backgrounds aapke manoranjan ke liye
+//alter only on approval from the senior dev
 const backgrounds = [
   'url("bg1.jpg")',
   'url("bg2.jpg")',
   'url("bg3.jpg")'
 ];
 
+//Important gameplay variables
 let score = 0;
 let highScore = parseInt(sessionStorage.getItem("highScore")) || 0;
 let level = 1;
@@ -20,6 +25,7 @@ let position = 50;
 let jumpStrength = 15;
 let isInvincible = false;
 
+//The function handling game start
 function startGame() {
   game.style.backgroundImage = backgrounds[level - 1];
   score = 0;
@@ -33,17 +39,20 @@ function startGame() {
   gameLoop();
 }
 
+//level and score updater is here
 function updateScore() {
   scoreText.textContent = `Score: ${score} | High Score: ${Math.max(score, highScore)}`;
   levelText.textContent = `Level ${level}: ${["Neon Skies", "Plasma Fields", "Galactic Core"][level - 1]}`;
 }
 
+//The primary jump function
 function jump() {
   if (isJumping || isGameOver) return;
   isJumping = true;
   velocity = jumpStrength;
 }
 
+//The obstacle generator - yahi hai samasya ki jad
 function generateObstacle() {
   if (isGameOver) return;
 
@@ -82,6 +91,8 @@ function generateObstacle() {
   setTimeout(generateObstacle, 2000 + Math.random() * 2000);
 }
 
+
+//kuch shaktiya hamare hero ke liye
 function generatePowerUp() {
   if (isGameOver) return;
 
@@ -137,6 +148,8 @@ function gameOver() {
   location.reload();
 }
 
+//This is the complete game loop of how the game works 
+//CAUTION : Hey jnr dev dont alter until asked .
 function gameLoop() {
   if (isGameOver) return;
 
@@ -155,5 +168,6 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+//Chaliye shuru karte hain :)
 startGame();
 
